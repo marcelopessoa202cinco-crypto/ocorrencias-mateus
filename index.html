@@ -2179,6 +2179,8 @@ function abrirEditMot(id){
   if(!m)return;
   document.getElementById('edit-mot-id').value=id;
   document.getElementById('edit-nome').value=m.nome;
+  const emm=document.getElementById('edit-mot-matricula');if(emm)emm.value=m.matricula||'';
+  const eadm=document.getElementById('edit-adm');if(eadm)eadm.value=m.adm||'';
   document.getElementById('edit-cpf').value=m.cpf||'';
   const selFilial=document.getElementById('edit-filial');
   Array.from(selFilial.options).forEach(o=>{o.selected=o.value===(m.filial||'CD-88');});
@@ -2194,8 +2196,11 @@ function salvarEdicaoMot(){
   if(!id){alert('Erro: ID não encontrado.');return;}
   const nome=document.getElementById('edit-nome').value.trim();
   if(!nome){alert('Informe o nome.');return;}
+  const matriculaEl=document.getElementById('edit-mot-matricula');
+  const matricula=matriculaEl?matriculaEl.value.trim():'';
   const cpf=document.getElementById('edit-cpf').value.trim();
-  const adm=document.getElementById('edit-adm').value;
+  const admEl=document.getElementById('edit-adm');
+  const adm=admEl?admEl.value:'';
   const filialEl=document.getElementById('edit-filial');
   const filial=filialEl.options[filialEl.selectedIndex].value;
   const obs=document.getElementById('edit-obs').value.trim();
@@ -2223,13 +2228,14 @@ function salvarEdicaoMot(){
 function excluirMotorista(id){
   const m=motoristas.find(x=>String(x.id)===String(id));
   const info=m?m.nome+' ('+m.filial+')':'ID '+id;
-  pedirSenha(()=>{
-    if(!confirm('Confirma exclusão do motorista '+info+'?'))return;
-    registrarLog('Excluir motorista', info, '', 'executado');
-    motoristas=motoristas.filter(x=>String(x.id)!==String(id));
-    sdMot(motoristas);renderCadMotoristas();atualizarDatalistMotoristas();
-    toast('Motorista excluído.');
-  },'Excluir motorista: '+info);
+  if(!confirm('Confirma exclusão do motorista: '+info+'?'))return;
+  motoristas=motoristas.filter(x=>String(x.id)!==String(id));
+  // Excluir no Firebase
+  if(window._fb) window._fb.excluirMot(id).catch(console.error);
+  try{localStorage.setItem('gm_motoristas_v1',JSON.stringify(motoristas));}catch(e){}
+  renderCadMotoristas();
+  atualizarDatalistMotoristas();
+  toast('Motorista excluído.');
 }
 
 function renderCadMotoristas(){
